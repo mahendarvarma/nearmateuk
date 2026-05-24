@@ -6,15 +6,17 @@ import { useAppStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { MapPin, GraduationCap, Globe, Sparkles, User as UserIcon, ChevronRight, Eye, Zap } from 'lucide-react'
 import type { User as UserType } from '@/types'
+import { LocationPrivacySettings } from '../location/location-privacy-settings'
 
 interface StudentCardProps {
   user: UserType
   compatibility: number
+  distance?: string
   onViewProfile: () => void
   onMatchCheck: () => void
 }
 
-function StudentCard({ user, compatibility, onViewProfile, onMatchCheck }: StudentCardProps) {
+function StudentCard({ user, compatibility, distance, onViewProfile, onMatchCheck }: StudentCardProps) {
   const [isHovered, setIsHovered] = useState(false)
 
   return (
@@ -112,6 +114,11 @@ function StudentCard({ user, compatibility, onViewProfile, onMatchCheck }: Stude
         <div className="flex items-center gap-2 text-xs text-muted-foreground relative z-10">
           <MapPin className="w-3.5 h-3.5" />
           <span>{user.accommodationNeeds.location} • {user.accommodationNeeds.roomType}</span>
+          {distance && (
+            <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary font-semibold">
+              {distance}
+            </span>
+          )}
         </div>
       )}
 
@@ -142,7 +149,7 @@ function StudentCard({ user, compatibility, onViewProfile, onMatchCheck }: Stude
 }
 
 export function StudentDiscoveryFeed() {
-  const { matches, setMatchCheckActive, setSelectedMatchUser, setView } = useAppStore()
+  const { matches, setMatchCheckActive, setSelectedMatchUser, setView, locationPermission } = useAppStore()
 
   const handleViewProfile = (user: UserType) => {
     // Navigate to profile view (to be implemented)
@@ -155,6 +162,12 @@ export function StudentDiscoveryFeed() {
   }
 
   const pendingMatches = matches.filter(m => m.status === 'pending')
+
+  // Generate random distances for demo purposes
+  const getDistance = (index: number): string | undefined => {
+    const distances = ['0.5 km', '1.2 km', '2.3 km', '3.1 km', '4.5 km', '5.8 km']
+    return locationPermission === 'granted' ? distances[index % distances.length] : undefined
+  }
 
   return (
     <div className="flex-1 flex flex-col px-4 pt-4 pb-28">
@@ -170,13 +183,16 @@ export function StudentDiscoveryFeed() {
             {pendingMatches.length} potential connections
           </p>
         </div>
-        <motion.div
-          whileHover={{ scale: 1.05, rotate: 180 }}
-          transition={{ duration: 0.3 }}
-          className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"
-        >
-          <Sparkles className="w-5 h-5 text-primary" />
-        </motion.div>
+        <div className="flex items-center gap-3">
+          <LocationPrivacySettings />
+          <motion.div
+            whileHover={{ scale: 1.05, rotate: 180 }}
+            transition={{ duration: 0.3 }}
+            className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"
+          >
+            <Sparkles className="w-5 h-5 text-primary" />
+          </motion.div>
+        </div>
       </motion.div>
 
       {/* Student Cards */}
@@ -187,6 +203,7 @@ export function StudentDiscoveryFeed() {
               key={match.id}
               user={match.user}
               compatibility={match.compatibility}
+              distance={getDistance(index)}
               onViewProfile={() => handleViewProfile(match.user)}
               onMatchCheck={() => handleMatchCheck(match.user)}
             />
